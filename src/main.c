@@ -21,13 +21,14 @@ void main()
         memset(edata, 0, (usize)(end - edata));
 
         /* initialize interrupt handler */
-        init_interrupt();
+        init_interrupt(); // 初始化中断处理器
 
         uart_init();
         printk_init();
 
-        gicv3_init();
-        gicv3_init_percpu();
+
+        gicv3_init(); // 初始化 GICV3 中断控制器
+        gicv3_init_percpu(); // 初始化每个 CPU 的 GICV3 中断控制器
 
         init_clock_handler();
 
@@ -35,12 +36,12 @@ void main()
         kinit();
 
         /* initialize sched */
-        init_sched();
+        init_sched(); // 初始化进程调度器
 
         /* initialize kernel proc */
-        init_kproc();
+        init_kproc(); // 初始化内核进程
 
-        smp_init();
+        smp_init(); // 初始化 SMP 机制
 
         arch_fence();
 

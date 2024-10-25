@@ -4,7 +4,7 @@
 #include <kernel/printk.h>
 #include <common/list.h>
 
-void init_sem(Semaphore *sem, int val)
+void init_sem(Semaphore* sem, int val) // 初始化信号量
 {
     sem->val = val;
     init_spinlock(&sem->lock);
@@ -65,15 +65,15 @@ bool _wait_sem(Semaphore *sem)
         release_spinlock(&sem->lock);
         return true;
     }
-    WaitData *wait = kalloc(sizeof(WaitData));
+    WaitData *wait = kalloc(sizeof(WaitData)); // 否则，初始化一个等待数据
     wait->proc = thisproc();
     wait->up = false;
-    _insert_into_list(&sem->sleeplist, &wait->slnode);
+    _insert_into_list(&sem->sleeplist, &wait->slnode); // 将等待数据插入到信号量的休眠链表
     acquire_sched_lock();
     release_spinlock(&sem->lock);
     sched(SLEEPING);
     acquire_spinlock(&sem->lock); // also the lock for waitdata
-    if (!wait->up) // wakeup by other sources
+    if (!wait->up) // wakeup by other sources 如果被其他进程唤醒，则不进行等待唤醒
     {
         ASSERT(++sem->val <= 0);
         _detach_from_list(&wait->slnode);
