@@ -56,19 +56,19 @@ bool queue_empty(Queue* x);
 #define queue_push_lock(x, item)                                                         \
     ({                                                                                   \
         queue_lock(x);                                                                   \
-        _queue_push(x, item);                                                             \
+        _queue_push(x, item);                                                            \
         queue_unlock(x);                                                                 \
     })
 #define queue_pop_lock(x)                                                                \
     ({                                                                                   \
         queue_lock(x);                                                                   \
-        _queue_pop(x);                                                                    \
+        _queue_pop(x);                                                                   \
         queue_unlock(x);                                                                 \
     })
 #define queue_detach_lock(x, item)                                                       \
     ({                                                                                   \
         queue_lock(x);                                                                   \
-        _queue_detach(x, item);                                                           \
+        _queue_detach(x, item);                                                          \
         queue_unlock(x);                                                                 \
     })
 
