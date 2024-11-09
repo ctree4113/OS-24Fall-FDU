@@ -7,11 +7,12 @@
 #define B_VALID 0x2 // Buffer has been read from disk.
 #define B_DIRTY 0x4 // Buffer needs to be written to disk.
 
-typedef struct {
-    int flags;
-    u8 data[BSIZE];
-    u32 block_no;
+typedef struct { // 缓冲区结构体
+    int flags;      // 缓冲区标志
+    u8 data[BSIZE]; // 缓冲区数据
+    u32 block_no;   // 缓冲区块号
 
     /* @todo: It depends on you to add other necessary elements. */
-    Semaphore sem;
+    bool disk;      // 虚拟磁盘是否正在处理缓冲区
+    Semaphore sem;  // 信号量
 } Buf;

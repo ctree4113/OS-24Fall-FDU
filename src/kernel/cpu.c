@@ -94,7 +94,7 @@ void set_cpu_on() // 设置 CPU 上线
     init_clock(); // 初始化时钟
     cpus[cpuid()].online = true; // 设置 CPU 上线
     printk("CPU %lld: hello\n", cpuid()); // 打印欢迎信息
-    hello_timer[cpuid()].elapse = 5000; // 设置定时器间隔
+    hello_timer[cpuid()].elapse = 10000; // 设置定时器间隔
     hello_timer[cpuid()].handler = hello; // 设置定时器处理函数
     set_cpu_timer(&hello_timer[cpuid()]); // 启动定时器
 }
