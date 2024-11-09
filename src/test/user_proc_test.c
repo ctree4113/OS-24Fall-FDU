@@ -72,12 +72,11 @@ void user_proc_test()
         }
         ASSERT(p->pgdir.pt);
 
-        // TODO: setup the user context
-        // 1. set x0 = i
-        // 2. set elr = EXTMEM
-        // 3. set spsr = 0
-
-        pids[i] = start_proc(p, trap_return, 0);
+        // setup the user context
+        p->ucontext->x0 = i;           // loop_start(i)
+        p->ucontext->elr_el1 = EXTMEM; // loop.S
+        p->ucontext->spsr_el1 = 0;     // EL0t
+        pids[i] = start_proc(p, trap_return, (u64)p->ucontext);
         printk("pid[%d] = %d\n", i, pids[i]);
     }
     ASSERT(wait_sem(&myrepot_done));

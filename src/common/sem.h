@@ -4,16 +4,16 @@
 
 struct Proc;
 
-typedef struct {
+typedef struct { // 等待数据
     bool up;
     struct Proc *proc;
     ListNode slnode;
 } WaitData;
 
-typedef struct {
-    SpinLock lock;
+typedef struct { // 信号量
+    SpinLock lock; // 信号量锁
     int val;
-    ListNode sleeplist;
+    ListNode sleeplist; // 休眠链表
 } Semaphore;
 
 void init_sem(Semaphore *, int val);

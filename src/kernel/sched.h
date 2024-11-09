@@ -3,7 +3,7 @@
 #include <kernel/proc.h>
 
 void init_sched();
-void init_schinfo(struct schinfo *);
+void init_schinfo(struct schinfo*);
 
 bool _activate_proc(Proc *, bool onalert);
 #define activate_proc(proc) _activate_proc(proc, false)
@@ -14,8 +14,10 @@ WARN_RESULT bool is_unused(Proc *);
 void acquire_sched_lock();
 void release_sched_lock();
 void sched(enum procstate new_state);
+u64 proc_entry(void (*entry)(u64), u64 arg);
 
-// MUST call lock_for_sched() before sched() !!!
+Proc* thisproc();
+
 #define yield() (acquire_sched_lock(), sched(RUNNABLE))
 
 WARN_RESULT Proc *thisproc();

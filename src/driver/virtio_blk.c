@@ -7,14 +7,14 @@
 #include <kernel/mem.h>
 #include <kernel/printk.h>
 
-#define VIRTIO_MAGIC 0x74726976
+#define VIRTIO_MAGIC 0x74726976 // 魔数
 
-struct disk {
-    SpinLock lk;
-    struct virtq virtq;
+struct disk { // 虚拟磁盘
+    SpinLock lk;        // 保护虚拟磁盘的锁
+    struct virtq virtq; // 虚拟磁盘的队列
 } disk;
 
-static void desc_init(struct virtq *virtq)
+static void desc_init(struct virtq *virtq) // 初始化描述符
 {
     for (int i = 0; i < NQUEUE; i++) {
         if (i != NQUEUE - 1) {
@@ -24,7 +24,7 @@ static void desc_init(struct virtq *virtq)
     }
 }
 
-static int alloc_desc(struct virtq *virtq)
+static int alloc_desc(struct virtq *virtq) // 分配描述符
 {
     if (virtq->nfree == 0) {
         PANIC();
@@ -39,7 +39,7 @@ static int alloc_desc(struct virtq *virtq)
     return d;
 }
 
-static void free_desc(struct virtq *virtq, u16 n)
+static void free_desc(struct virtq *virtq, u16 n) // 释放描述符
 {
     u16 head = n;
     int empty = 0;
@@ -57,16 +57,16 @@ static void free_desc(struct virtq *virtq, u16 n)
     virtq->free_head = head;
 }
 
-int virtio_blk_rw(Buf *b)
+int virtio_blk_rw(Buf *b) // 虚拟磁盘读写
 {
-    enum diskop op = DREAD;
-    if (b->flags & B_DIRTY)
+    enum diskop op = DREAD; // 读操作
+    if (b->flags & B_DIRTY) // 如果缓冲区被修改过，则需要进行写操作
         op = DWRITE;
     
-    init_sem(&b->sem, 0);
+    init_sem(&b->sem, 0); // 初始化信号量
 
-    u64 sector = b->block_no;
-    struct virtio_blk_req_hdr hdr;
+    u64 sector = b->block_no; // 获取缓冲区所在的扇区
+    struct virtio_blk_req_hdr hdr; // 虚拟磁盘请求头
 
     if (op == DREAD)
         hdr.type = VIRTIO_BLK_T_IN;
@@ -74,88 +74,99 @@ int virtio_blk_rw(Buf *b)
         hdr.type = VIRTIO_BLK_T_OUT;
     else
         return -1;
-    hdr.reserved = 0;
-    hdr.sector = sector;
+    hdr.reserved = 0; // 保留字段
+    hdr.sector = sector; // 扇区
 
     acquire_spinlock(&disk.lk);
 
-    int d0 = alloc_desc(&disk.virtq);
+    int d0 = alloc_desc(&disk.virtq); // 分配 d0 描述符
     if (d0 < 0)
         return -1;
-    disk.virtq.desc[d0].addr = (u64)V2P(&hdr);
-    disk.virtq.desc[d0].len = sizeof(hdr);
-    disk.virtq.desc[d0].flags = VIRTQ_DESC_F_NEXT;
+    disk.virtq.desc[d0].addr = (u64)V2P(&hdr);     // 设置 d0 描述符的地址
+    disk.virtq.desc[d0].len = sizeof(hdr);         // 设置 d0 描述符的长度
+    disk.virtq.desc[d0].flags = VIRTQ_DESC_F_NEXT; // 设置 d0 描述符的标志
 
-    int d1 = alloc_desc(&disk.virtq);
+    int d1 = alloc_desc(&disk.virtq); // 分配 d1 描述符
     if (d1 < 0)
         return -1;
-    disk.virtq.desc[d0].next = d1;
-    disk.virtq.desc[d1].addr = (u64)V2P(b->data);
-    disk.virtq.desc[d1].len = 512;
-    disk.virtq.desc[d1].flags = VIRTQ_DESC_F_NEXT;
+    disk.virtq.desc[d0].next = d1;                 // 设置 d0 描述符的下一个描述符
+    disk.virtq.desc[d1].addr = (u64)V2P(b->data);  // 设置 d1 描述符的地址
+    disk.virtq.desc[d1].len = 512;                 // 设置 d1 描述符的长度
+    disk.virtq.desc[d1].flags = VIRTQ_DESC_F_NEXT; // 设置 d1 描述符的标志
     if (op == DREAD)
-        disk.virtq.desc[d1].flags |= VIRTQ_DESC_F_WRITE;
+        disk.virtq.desc[d1].flags |= VIRTQ_DESC_F_WRITE; // 如果 op 为读操作，则设置 d1 描述符的标志为写操作
 
-    int d2 = alloc_desc(&disk.virtq);
+    int d2 = alloc_desc(&disk.virtq); // 分配 d2 描述符
     if (d2 < 0)
         return -1;
-    disk.virtq.desc[d1].next = d2;
-    disk.virtq.desc[d2].addr = (u64)V2P(&disk.virtq.info[d0].status);
-    disk.virtq.desc[d2].len = sizeof(disk.virtq.info[d0].status);
-    disk.virtq.desc[d2].flags = VIRTQ_DESC_F_WRITE;
-    disk.virtq.desc[d2].next = 0;
+    disk.virtq.desc[d1].next = d2;                                    // 设置 d1 描述符的下一个描述符为 d2
+    disk.virtq.desc[d2].addr = (u64)V2P(&disk.virtq.info[d0].status); // 设置 d2 描述符的地址
+    disk.virtq.desc[d2].len = sizeof(disk.virtq.info[d0].status);     // 设置 d2 描述符的长度
+    disk.virtq.desc[d2].flags = VIRTQ_DESC_F_WRITE;                   // 设置 d2 描述符的标志
+    disk.virtq.desc[d2].next = 0;                                     // 设置 d2 描述符的下一个描述符为 0
 
-    disk.virtq.avail->ring[disk.virtq.avail->idx % NQUEUE] = d0;
-    disk.virtq.avail->idx++;
+    disk.virtq.avail->ring[disk.virtq.avail->idx % NQUEUE] = d0;      // 设置可用描述符的索引
+    disk.virtq.avail->idx++;                                          // 增加可用描述符的索引
 
-    disk.virtq.info[d0].buf = b->data;
+    disk.virtq.info[d0].buf = b;                                      // 设置 d0 描述符的缓冲区
 
-    arch_fence();
-    REG(VIRTIO_REG_QUEUE_NOTIFY) = 0;
-    arch_fence();
+    arch_fence(); // 内存屏障，确保内存操作完成
+    REG(VIRTIO_REG_QUEUE_NOTIFY) = 0; // 通知虚拟磁盘
+    arch_fence(); // 内存屏障
 
     /* LAB 4 TODO 1 BEGIN */
+
+    b->disk = TRUE; // 设置缓冲区正在处理
+
+    while (b->disk) {
+        release_spinlock(&disk.lk); // 释放虚拟磁盘锁
+        wait_sem(&b->sem);          // 等待缓冲区处理完成
+        acquire_spinlock(&disk.lk); // 获取虚拟磁盘锁
+    }
     
     /* LAB 4 TODO 1 END */
 
-    disk.virtq.info[d0].done = 0;
-    free_desc(&disk.virtq, d0);
-    release_spinlock(&disk.lk);
+    disk.virtq.info[d0].done = 0; // 设置 d0 描述符的完成标志
+    free_desc(&disk.virtq, d0);   // 释放 d0 描述符
+    release_spinlock(&disk.lk);   // 释放虚拟磁盘锁
     return 0;
 }
 
-static void virtio_blk_intr()
+void virtio_blk_intr() // 虚拟磁盘中断处理
 {
     acquire_spinlock(&disk.lk);
 
-    u32 intr_status = REG(VIRTIO_REG_INTERRUPT_STATUS);
-    REG(VIRTIO_REG_INTERRUPT_ACK) = intr_status & 0x3;
+    u32 intr_status = REG(VIRTIO_REG_INTERRUPT_STATUS); // 设置中断状态
+    REG(VIRTIO_REG_INTERRUPT_ACK) = intr_status & 0x3;  // 确认中断
 
     int d0;
     while (disk.virtq.last_used_idx != disk.virtq.used->idx) {
-        d0 = disk.virtq.used->ring[disk.virtq.last_used_idx % NQUEUE].id;
+        d0 = disk.virtq.used->ring[disk.virtq.last_used_idx % NQUEUE].id; // 获取描述符环的头索引
         if (disk.virtq.info[d0].status != 0) {
             PANIC();
         }
 
         /* LAB 4 TODO 2 BEGIN */
-    
+
+        Buf *buf = disk.virtq.info[d0].buf; // 获取缓冲区
+        buf->disk = FALSE;                  // 处理完成，释放缓冲区
+        post_sem(&buf->sem);                // 释放信号量
         /* LAB 4 TODO 2 END */
 
-        disk.virtq.info[d0].buf = NULL;
-        disk.virtq.last_used_idx++;
+        disk.virtq.info[d0].buf = NULL; // 释放缓冲区
+        disk.virtq.last_used_idx++;     // 增加描述符环的索引
     }
 
     release_spinlock(&disk.lk);
 }
 
-static int virtq_init(struct virtq *vq)
+static int virtq_init(struct virtq *vq) // 初始化虚拟队列
 {
     memset(vq, 0, sizeof(*vq));
 
-    vq->desc = kalloc_page();
-    vq->avail = kalloc_page();
-    vq->used = kalloc_page();
+    vq->desc = kalloc_page();  // 分配描述符页
+    vq->avail = kalloc_page(); // 分配待处理页
+    vq->used = kalloc_page();  // 分配已处理页
 
     memset(vq->desc, 0, 4096);
     memset(vq->avail, 0, 4096);
@@ -164,13 +175,13 @@ static int virtq_init(struct virtq *vq)
     if (!vq->desc || !vq->avail || !vq->used) {
         PANIC();
     }
-    vq->nfree = NQUEUE;
-    desc_init(vq);
+    vq->nfree = NQUEUE; // 空闲描述符数量
+    desc_init(vq);      // 初始化描述符
 
     return 0;
 }
 
-void virtio_init()
+void virtio_init() // 初始化
 {
     if (REG(VIRTIO_REG_MAGICVALUE) != VIRTIO_MAGIC ||
         REG(VIRTIO_REG_VERSION) != 2 || REG(VIRTIO_REG_DEVICE_ID) != 2) {
@@ -249,6 +260,6 @@ void virtio_init()
 
     arch_fence();
 
-    set_interrupt_handler(VIRTIO_BLK_IRQ, virtio_blk_intr);
-    init_spinlock(&disk.lk);
+    set_interrupt_handler(VIRTIO_BLK_IRQ, virtio_blk_intr); // 设置中断处理跳转地址
+    init_spinlock(&disk.lk);                                // 初始化虚拟磁盘锁
 }
