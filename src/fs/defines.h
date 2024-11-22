@@ -1,78 +1,64 @@
 #pragma once
-
 #include <common/defines.h>
 
-/**
- * this file contains on-disk representations of primitives in our filesystem.
- */
+#define FSSIZE 1000    // 文件系统总块数
+#define BLOCK_SIZE 512 // 块大小
 
-#define BLOCK_SIZE 512
-
-// maximum number of distinct block numbers can be recorded in the log header.
-#define LOG_MAX_SIZE ((BLOCK_SIZE - sizeof(usize)) / sizeof(usize))
-
-#define INODE_NUM_DIRECT 12
-#define INODE_NUM_INDIRECT (BLOCK_SIZE / sizeof(u32))
-#define INODE_PER_BLOCK (BLOCK_SIZE / sizeof(InodeEntry))
-#define INODE_MAX_BLOCKS (INODE_NUM_DIRECT + INODE_NUM_INDIRECT)
-#define INODE_MAX_BYTES (INODE_MAX_BLOCKS * BLOCK_SIZE)
-
-// the maximum length of file names, including trailing '\0'.
-#define FILE_NAME_MAX_LENGTH 14
-
-// inode types:
-#define INODE_INVALID 0
-#define INODE_DIRECTORY 1
-#define INODE_REGULAR 2 // regular file
-#define INODE_DEVICE 3
-
-#define ROOT_INODE_NO 1
-
-typedef u16 InodeType;
-
-#define BIT_PER_BLOCK (BLOCK_SIZE * 8)
-
-// disk layout:
-// [ MBR block | super block | log blocks | inode blocks | bitmap blocks | data blocks ]
-//
-// `mkfs` generates the super block and builds an initial filesystem. The
-// super block describes the disk layout.
 typedef struct {
-    u32 num_blocks; // total number of blocks in filesystem.
-    u32 num_data_blocks;
-    u32 num_inodes;
-    u32 num_log_blocks; // number of blocks for logging, including log header.
-    u32 log_start; // the first block of logging area.
-    u32 inode_start; // the first block of inode area.
-    u32 bitmap_start; // the first block of bitmap area.
-} SuperBlock;
+    u32 num_blocks;      // 总块数
+    u32 num_data_blocks; // 数据块数
+    u32 num_inodes;      // 索引数
+    u32 num_log_blocks;  // 日志块数
+    u32 log_start;       // 第一个日志块号
+    u32 inode_start;     // 第一个索引块号
+    u32 bitmap_start;    // 第一个位图块号
+} SuperBlock; // 超级块
 
-// `type == INODE_INVALID` implies this inode is free.
+#define ROOT_INODE_NO 1                                   // 根目录索引编号
+#define INODE_PER_BLOCK (BLOCK_SIZE / sizeof(InodeEntry)) // 每块最大索引数量
+
+
+#define BIT_PER_BLOCK (BLOCK_SIZE * 8)                                // 每块的最大位图数量
+#define BIT_BLOCK_NO(b, sb) ((b) / BIT_PER_BLOCK + sb->bitmap_start) // 位图块号
+
+#define INODE_NUM_DIRECT 12                                      // 直接块数
+#define INODE_NUM_INDIRECT (BLOCK_SIZE / sizeof(u32))            // 间接块数
+#define INODE_MAX_BLOCKS (INODE_NUM_DIRECT + INODE_NUM_INDIRECT) // 最大总块数
+#define INODE_MAX_BYTES (INODE_MAX_BLOCKS * BLOCK_SIZE)          // 最大文件大小
+
+typedef u16 InodeType; // 索引类型
+enum {
+    INODE_INVALID = 0,   // 空闲
+    INODE_DIRECTORY = 1, // 目录
+    INODE_REGULAR = 2,   // 文件
+    INODE_DEVICE = 3,    // 设备
+};
+
+// 硬盘-索引项
 typedef struct dinode {
-    InodeType type;
-    u16 major; // major device id, for INODE_DEVICE only.
-    u16 minor; // minor device id, for INODE_DEVICE only.
-    u16 num_links; // number of hard links to this inode in the filesystem.
-    u32 num_bytes; // number of bytes in the file, i.e. the size of file.
-    u32 addrs[INODE_NUM_DIRECT]; // direct addresses/block numbers.
-    u32 indirect; // the indirect address block.
-} InodeEntry;
+    InodeType type;              // 索引类型
+    u16 major;                   // 主设备号
+    u16 minor;                   // 次设备号
+    u16 num_links;               // 硬链接数
+    u32 num_bytes;               // 文件大小
+    u32 addrs[INODE_NUM_DIRECT]; // 直接块块号
+    u32 indirect;                // 间接块块号
+} InodeEntry; // 索引
 
-// the block pointed by `InodeEntry.indirect`.
 typedef struct {
     u32 addrs[INODE_NUM_INDIRECT];
 } IndirectBlock;
 
-// directory entry. `inode_no == 0` implies this entry is free.
+#define FILE_NAME_MAX_LENGTH 14 // 文件名最大长度
+
 typedef struct dirent {
-    u16 inode_no;
-    char name[FILE_NAME_MAX_LENGTH];
-} DirEntry;
+    u16 inode_no;                    // 索引号
+    char name[FILE_NAME_MAX_LENGTH]; // 文件名
+} DirEntry; // 目录
+
+#define LOG_MAX_SIZE ((BLOCK_SIZE - sizeof(usize)) / sizeof(usize)) // 日志头块最大记录数量
 
 typedef struct {
     usize num_blocks;
     usize block_no[LOG_MAX_SIZE];
-} LogHeader;
-
-// mkfs only
-#define FSSIZE 1000 // Size of file system in blocks
+} LogHeader; // 日志头

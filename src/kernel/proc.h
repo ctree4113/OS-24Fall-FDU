@@ -12,8 +12,6 @@ typedef struct UserContext { // 用户进程上下文
     u64 sp_el0;   // 用户进程栈指针
     u64 spsr_el1; // 用户进程模式
     u64 elr_el1;  // 用户进程异常返回地址
-
-    // General Regs
     u64 x0;
     u64 x1;
     u64 x2;
@@ -45,6 +43,7 @@ typedef struct UserContext { // 用户进程上下文
     u64 x28;
     u64 x29;
     u64 x30;
+    u64 kernel_sp; // 用于中断返回时恢复内核栈
 } UserContext;
 
 typedef struct KernelContext { // 内核进程上下文
@@ -64,7 +63,7 @@ typedef struct KernelContext { // 内核进程上下文
     u64 x30;
 } KernelContext;
 
-struct schinfo { //  进程的调度信息
+struct schinfo { // 进程的调度信息
     ListNode sched_node;
 };
 
@@ -75,14 +74,15 @@ typedef struct Proc {
     int exitcode;
     enum procstate state;
     Semaphore childexit; // 子进程退出的信号量
-    ListNode children;
-    ListNode ptnode;
-    struct Proc* parent;
+    ListNode children; // 子进程链表节点
+    ListNode ptnode; // 父进程链表节点
+    struct Proc* parent; // 父进程
     struct schinfo schinfo; // 调度信息
     struct pgdir pgdir; // 页表目录
-    void* kstack; // 内核栈
-    UserContext* ucontext;
-    KernelContext* kcontext;
+    UserContext* trapcontext; // 中断上下文
+    UserContext* ucontext; // 用户上下文
+    KernelContext* kcontext; // 内核上下文
+    SpinLock lock; // 单个进程锁
 } Proc;
 
 void init_kproc();

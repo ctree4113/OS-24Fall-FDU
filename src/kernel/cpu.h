@@ -6,14 +6,15 @@
 #define NCPU 4
 
 struct sched {
-    Proc* proc; // 当前执行的进程,
+    Proc* proc;      // 当前执行的进程
     Proc* idle_proc; // 初始化的 idle 进程
+    Proc* last_proc; // 转为 idle 进程前执行的进程
 };
 
 struct cpu {
-    bool online; // 是否在线
+    bool online;           // 是否在线
     struct rb_root_ timer; // 计时器
-    struct sched sched; // 调度信息
+    struct sched sched;    // 调度信息
 };
 
 extern struct cpu cpus[NCPU];

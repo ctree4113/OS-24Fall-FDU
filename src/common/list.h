@@ -15,26 +15,26 @@ ListNode* _detach_from_list(ListNode* node);
 bool _empty_list(ListNode* list);
 
 // * List operations with locks
-#define merge_list(lock, node1, node2)                                                   \
-    ({                                                                                   \
-        acquire_spinlock(lock);                                                          \
-        ListNode* __t = _merge_list(node1, node2);                                       \
-        release_spinlock(lock);                                                          \
-        __t;                                                                             \
+#define merge_list(lock, node1, node2)             \
+    ({                                             \
+        acquire_spinlock(lock);                    \
+        ListNode* __t = _merge_list(node1, node2); \
+        release_spinlock(lock);                    \
+        __t;                                       \
     })
-#define insert_into_list(lock, list, node)                                               \
-    ({                                                                                   \
-        acquire_spinlock(lock);                                                          \
-        ListNode* __t = _insert_into_list(list, node);                                   \
-        release_spinlock(lock);                                                          \
-        __t;                                                                             \
+#define insert_into_list(lock, list, node)             \
+    ({                                                 \
+        acquire_spinlock(lock);                        \
+        ListNode* __t = _insert_into_list(list, node); \
+        release_spinlock(lock);                        \
+        __t;                                           \
     })
-#define detach_from_list(lock, node)                                                     \
-    ({                                                                                   \
-        acquire_spinlock(lock);                                                          \
-        ListNode* __t = _detach_from_list(node);                                         \
-        release_spinlock(lock);                                                          \
-        __t;                                                                             \
+#define detach_from_list(lock, node)             \
+    ({                                           \
+        acquire_spinlock(lock);                  \
+        ListNode* __t = _detach_from_list(node); \
+        release_spinlock(lock);                  \
+        __t;                                     \
     })
 
 typedef struct Queue { // 循环队列
@@ -53,23 +53,23 @@ void _queue_detach(Queue* x, ListNode* item);
 ListNode* queue_front(Queue* x);
 bool queue_empty(Queue* x);
 
-#define queue_push_lock(x, item)                                                         \
-    ({                                                                                   \
-        queue_lock(x);                                                                   \
-        _queue_push(x, item);                                                            \
-        queue_unlock(x);                                                                 \
+#define queue_push_lock(x, item) \
+    ({                           \
+        queue_lock(x);           \
+        _queue_push(x, item);    \
+        queue_unlock(x);         \
     })
-#define queue_pop_lock(x)                                                                \
-    ({                                                                                   \
-        queue_lock(x);                                                                   \
-        _queue_pop(x);                                                                   \
-        queue_unlock(x);                                                                 \
+#define queue_pop_lock(x) \
+    ({                    \
+        queue_lock(x);    \
+        _queue_pop(x);    \
+        queue_unlock(x);  \
     })
-#define queue_detach_lock(x, item)                                                       \
-    ({                                                                                   \
-        queue_lock(x);                                                                   \
-        _queue_detach(x, item);                                                          \
-        queue_unlock(x);                                                                 \
+#define queue_detach_lock(x, item) \
+    ({                             \
+        queue_lock(x);             \
+        _queue_detach(x, item);    \
+        queue_unlock(x);           \
     })
 
 typedef struct QueueNode { // 队列结点（无锁）
