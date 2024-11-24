@@ -27,50 +27,48 @@ struct MockBlockDevice {
             }
         }
 
-        void fill_zero() {
-            std::fill(std::begin(data), std::end(data), 0);
-        }
+        void fill_zero() { std::fill(std::begin(data), std::end(data), 0); }
     };
 
-    const SuperBlock *sblock;
+    const SuperBlock* sblock;
 
     std::atomic<bool> offline;
     std::atomic<usize> read_count;
     std::atomic<usize> write_count;
     std::vector<Block> disk;
 
-    using Hook = std::function<void(usize block_no, u8 *buffer)>;
+    using Hook = std::function<void(usize block_no, u8* buffer)>;
 
     Hook on_read;
     Hook on_write;
 
-    void initialize(const SuperBlock &_sblock) {
+    void initialize(const SuperBlock& _sblock) {
         sblock = &_sblock;
 
         offline = false;
         read_count = 0;
         write_count = 0;
+
         {
             std::vector<Block> new_disk(sblock->num_blocks);
             std::swap(disk, new_disk);
         }
 
-        for (auto &block : disk) {
+        for (auto& block : disk) {
             block.fill_junk();
         }
 
-        if (sblock->num_log_blocks < 2)
-            throw Internal("logging area is too small");
+        if (sblock->num_log_blocks < 2) throw Internal("logging area is too small");
         disk[sblock->log_start].fill_zero();
 
         usize num_bitmap_blocks = (sblock->num_blocks + BIT_PER_BLOCK - 1) / BIT_PER_BLOCK;
+
         for (usize i = 0; i < num_bitmap_blocks; i++) {
             disk[sblock->bitmap_start + i].fill_zero();
         }
 
-        usize num_preallocated = 1 + 1 + sblock->num_log_blocks +
-                                 ((sblock->num_inodes + INODE_PER_BLOCK - 1) / INODE_PER_BLOCK) +
-                                 num_bitmap_blocks;
+        usize num_preallocated = 1 + 1 + sblock->num_log_blocks
+            + ((sblock->num_inodes + INODE_PER_BLOCK - 1) / INODE_PER_BLOCK) + num_bitmap_blocks;
         if (num_preallocated + sblock->num_data_blocks > sblock->num_blocks)
             throw Internal("invalid super block");
         for (usize i = 0; i < num_preallocated; i++) {
@@ -79,22 +77,20 @@ struct MockBlockDevice {
         }
     }
 
-    auto inspect(usize block_no) -> u8 * {
+    auto inspect(usize block_no) -> u8* {
         if (block_no >= disk.size())
             throw Internal("block number is out of range");
         return disk[block_no].data;
     }
 
-    auto inspect_log(usize index) -> u8 * {
-        return inspect(sblock->log_start + 1 + index);
+    auto inspect_log(usize index) -> u8* { return inspect(sblock->log_start + 1 + index); }
+
+    auto inspect_log_header() -> LogHeader* {
+        return reinterpret_cast<LogHeader*>(inspect(sblock->log_start));
     }
 
-    auto inspect_log_header() -> LogHeader * {
-        return reinterpret_cast<LogHeader *>(inspect(sblock->log_start));
-    }
-
-    void dump(std::ostream &stream) {
-        for (auto &block : disk) {
+    void dump(std::ostream& stream) {
+        for (auto& block : disk) {
             std::scoped_lock lock(block.mutex);
             for (usize i = 0; i < BLOCK_SIZE; i++) {
                 stream << std::setfill('0') << std::setw(2) << std::hex
@@ -104,8 +100,8 @@ struct MockBlockDevice {
         }
     }
 
-    void load(std::istream &stream) {
-        for (auto &block : disk) {
+    void load(std::istream& stream) {
+        for (auto& block : disk) {
             for (usize i = 0; i < BLOCK_SIZE; i++) {
                 u64 value;
                 stream >> std::hex >> value;
@@ -114,12 +110,12 @@ struct MockBlockDevice {
         }
     }
 
-    void dump(const std::string &path) {
+    void dump(const std::string& path) {
         std::ofstream file(path);
         dump(file);
     }
 
-    void load(const std::string &path) {
+    void load(const std::string& path) {
         std::ifstream file(path);
         load(file);
     }
@@ -129,13 +125,13 @@ struct MockBlockDevice {
             throw Offline("disk power failure");
     }
 
-    void read(usize block_no, u8 *buffer) {
+    void read(usize block_no, u8* buffer) {
         if (block_no >= disk.size())
             throw AssertionFailure("block number is out of range");
 
         check_offline();
 
-        auto &block = disk[block_no];
+        auto& block = disk[block_no];
         std::scoped_lock lock(block.mutex);
 
         if (on_read)
@@ -152,13 +148,13 @@ struct MockBlockDevice {
         check_offline();
     }
 
-    void write(usize block_no, u8 *buffer) {
+    void write(usize block_no, u8* buffer) {
         if (block_no >= disk.size())
             throw AssertionFailure("block number is out of range");
 
         check_offline();
 
-        auto &block = disk[block_no];
+        auto& block = disk[block_no];
         std::scoped_lock lock(block.mutex);
 
         if (on_write)
@@ -176,6 +172,40 @@ struct MockBlockDevice {
     }
 };
 
-namespace {
-#include "block_device.ipp"
-}  // namespace
+static MockBlockDevice mock;
+static SuperBlock sblock;
+static BlockDevice device;
+
+static void stub_read(usize block_no, u8* buffer) { mock.read(block_no, buffer); }
+static void stub_write(usize block_no, u8* buffer) { mock.write(block_no, buffer); }
+
+
+
+static void initialize_mock( //
+    usize log_size, usize num_data_blocks, const std::string& image_path = "")
+{
+    sblock.log_start = 2;
+    sblock.inode_start = sblock.log_start + 1 + log_size;
+    sblock.bitmap_start = sblock.inode_start + 1;
+    sblock.num_inodes = 1;
+    sblock.num_log_blocks = 1 + log_size;
+    sblock.num_data_blocks = num_data_blocks;
+    sblock.num_blocks = 1 + 1 + 1 + log_size + 1
+        + ((num_data_blocks + BIT_PER_BLOCK - 1) / BIT_PER_BLOCK) + num_data_blocks;
+
+    mock.initialize(sblock);
+
+    device.read = stub_read;
+    device.write = stub_write;
+
+    if (!image_path.empty())
+        mock.load(image_path);
+
+}
+
+[[maybe_unused]] static void initialize( //
+    usize log_size, usize num_data_blocks, const std::string& image_path = "")
+{
+    initialize_mock(log_size, num_data_blocks, image_path);
+    init_bcache(&sblock, &device);
+}

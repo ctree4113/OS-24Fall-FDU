@@ -6,19 +6,65 @@
 #include <common/rbtree.h>
 #include <kernel/pt.h>
 
-enum procstate { UNUSED, RUNNABLE, RUNNING, SLEEPING, DEEPSLEEPING, ZOMBIE };
+enum procstate { UNUSED, RUNNABLE, RUNNING, SLEEPING, DEEPSLEEPING, ZOMBIE }; // 所有进程状态
 
-typedef struct UserContext {
-    // TODO: customize your trap frame
+typedef struct UserContext { // 用户进程上下文
+    u64 sp_el0;   // 用户进程栈指针
+    u64 spsr_el1; // 用户进程模式
+    u64 elr_el1;  // 用户进程异常返回地址
+    u64 x0;
+    u64 x1;
+    u64 x2;
+    u64 x3;
+    u64 x4;
+    u64 x5;
+    u64 x6;
+    u64 x7;
+    u64 x8;
+    u64 x9;
+    u64 x10;
+    u64 x11;
+    u64 x12;
+    u64 x13;
+    u64 x14;
+    u64 x15;
+    u64 x16;
+    u64 x17;
+    u64 x18;
+    u64 x19;
+    u64 x20;
+    u64 x21;
+    u64 x22;
+    u64 x23;
+    u64 x24;
+    u64 x25;
+    u64 x26;
+    u64 x27;
+    u64 x28;
+    u64 x29;
+    u64 x30;
+    u64 kernel_sp; // 用于中断返回时恢复内核栈
 } UserContext;
 
-typedef struct KernelContext {
-    // TODO: customize your context
+typedef struct KernelContext { // 内核进程上下文
+    u64 x0;
+    u64 x1;
+    u64 x19;
+    u64 x20;
+    u64 x21;
+    u64 x22;
+    u64 x23;
+    u64 x24;
+    u64 x25;
+    u64 x26;
+    u64 x27;
+    u64 x28;
+    u64 x29;
+    u64 x30;
 } KernelContext;
 
-// embeded data for procs
-struct schinfo {
-    // TODO: customize your sched info
+struct schinfo { // 进程的调度信息
+    ListNode sched_node;
 };
 
 typedef struct Proc {
@@ -27,15 +73,16 @@ typedef struct Proc {
     int pid;
     int exitcode;
     enum procstate state;
-    Semaphore childexit;
-    ListNode children;
-    ListNode ptnode;
-    struct Proc *parent;
-    struct schinfo schinfo;
-    struct pgdir pgdir;
-    void *kstack;
-    UserContext *ucontext;
-    KernelContext *kcontext;
+    Semaphore childexit; // 子进程退出的信号量
+    ListNode children; // 子进程链表节点
+    ListNode ptnode; // 父进程链表节点
+    struct Proc* parent; // 父进程
+    struct schinfo schinfo; // 调度信息
+    struct pgdir pgdir; // 页表目录
+    UserContext* trapcontext; // 中断上下文
+    UserContext* ucontext; // 用户上下文
+    KernelContext* kcontext; // 内核上下文
+    SpinLock lock; // 单个进程锁
 } Proc;
 
 void init_kproc();

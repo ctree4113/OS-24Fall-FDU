@@ -20,7 +20,7 @@
  * Size per entry: 2MB
  * Address Span: [0x0, 0x40000000 (1GB)]
  */
-__attribute__((__aligned__(PAGE_SIZE))) PTEntries _kernel_pt_lv2_dev = {
+__attribute__((__aligned__(PAGE_SIZE))) PTEntries _kernel_pt_lv2_dev = { // 设备段页表
     // Space up to 0x8000000 is reserved for a boot ROM
     0x0 & ~PTE_VALID,
     0x200000 & ~PTE_VALID,

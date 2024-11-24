@@ -76,6 +76,8 @@ typedef u64 usize;
  * In this example, the expression `container_of(b, Container, node)` will yield
  * the same result as `&a`.
  */
+
+// 返回指向结构体成员所在的结构体的指针
 #define container_of(mptr, type, member)                      \
     ({                                                        \
         const typeof(((type *)NULL)->member) *_mptr = (mptr); \
