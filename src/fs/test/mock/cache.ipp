@@ -1,5 +1,4 @@
 #pragma once
-
 #include "cache.hpp"
 
 static MockBlockCache mock;
@@ -34,7 +33,7 @@ static void stub_sync(OpContext *ctx, Block *block) {
     mock.sync(ctx, block);
 }
 
-static struct _Loader {
+static struct _Loader { // 加载器，初始化块缓存
     _Loader() {
         sblock = mock.get_sblock();
 

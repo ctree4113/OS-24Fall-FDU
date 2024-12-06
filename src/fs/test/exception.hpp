@@ -1,10 +1,7 @@
 #pragma once
-
 #include <cstdio>
-
 #include <exception>
 #include <string>
-
 #include <cstdio>
 
 static inline void backtrace() {

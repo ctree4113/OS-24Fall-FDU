@@ -1,7 +1,5 @@
 #pragma once
-
 #include <sstream>
-
 #include "exception.hpp"
 
 [[maybe_unused]] static inline auto

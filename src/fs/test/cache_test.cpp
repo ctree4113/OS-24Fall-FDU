@@ -5,9 +5,7 @@ extern "C" {
 #include "assert.hpp"
 #include "pause.hpp"
 #include "runner.hpp"
-
 #include "mock/block_device.hpp"
-
 #include <chrono>
 #include <condition_variable>
 #include <random>

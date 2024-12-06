@@ -5,7 +5,6 @@ extern "C" {
 #include "assert.hpp"
 #include "pause.hpp"
 #include "runner.hpp"
-
 #include "mock/cache.hpp"
 
 void test_init()

@@ -1,16 +1,16 @@
 #include "lock_config.hpp"
 #include "map.hpp"
 #include "errno.h"
-
 #include <condition_variable>
 #include <semaphore.h>
 #include <time.h>
 #include <cassert>
 #include <map>
 #include <unistd.h>
+
 namespace {
 
-struct Mutex {
+struct Mutex { // 互斥锁
     bool locked;
     std::mutex mutex;
 
@@ -27,7 +27,7 @@ struct Mutex {
     }
 };
 
-struct Signal {
+struct Signal { // 信号量
     // use a pointer to avoid `pthread_cond_destroy` blocking process exit.
     std::condition_variable_any* cv;
 
@@ -36,8 +36,8 @@ struct Signal {
 
 Map<void*, Mutex> mtx_map;
 
-thread_local int holding = 0;
-static struct Blocker {
+thread_local int holding = 0; // 持有锁的线程数
+static struct Blocker { // 阻塞器
     sem_t sem;
     Blocker() { sem_init(&sem, 0, 4); }
     void p()

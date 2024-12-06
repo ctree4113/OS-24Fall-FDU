@@ -5,9 +5,7 @@ extern "C" {
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
-
 #include <sstream>
-
 #include "../exception.hpp"
 
 extern "C" {

@@ -9,10 +9,9 @@ extern "C" {
 #include <mutex>
 #include <random>
 #include <unordered_map>
-
 #include "../exception.hpp"
 
-struct MockBlockCache {
+struct MockBlockCache { // 模拟块缓存
     static constexpr usize num_blocks = 2000;
     static constexpr usize inode_start = 200;
     static constexpr usize block_start = 1000;

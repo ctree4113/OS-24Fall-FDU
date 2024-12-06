@@ -4,7 +4,7 @@ extern "C" {
 #include "common/defines.h"
 }
 
-struct MockLockConfig {
+struct MockLockConfig { // 模拟锁配置
     static constexpr bool SpinLockBlocksCPU = true;
     static constexpr bool SpinLockForbidsWait = false;
     static constexpr int WaitTimeoutSeconds = 10;

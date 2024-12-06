@@ -1,11 +1,8 @@
 #pragma once
-
 #include <cstdio>
-
 #include <functional>
 #include <string>
 #include <vector>
-
 #include <sys/wait.h>
 #include <unistd.h>
 

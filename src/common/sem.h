@@ -12,7 +12,7 @@ typedef struct {
 
 typedef struct {
     SpinLock lock;      // 信号量锁
-    int val;            // 信号量值
+    int val;            // 信号量值，信号量为0时，表示没有进程可以访问资源
     ListNode sleeplist; // 休眠链表
 } Semaphore; // 信号量
 

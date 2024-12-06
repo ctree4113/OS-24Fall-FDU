@@ -1,8 +1,6 @@
 #pragma once
-
 #include <csignal>
 #include <cstdio>
-
 #include <atomic>
 #include <unistd.h>
 

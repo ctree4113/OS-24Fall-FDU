@@ -1,12 +1,10 @@
 #pragma once
-
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
-
 #include "../exception.hpp"
 
-template <typename Key, typename Value> class Map {
+template <typename Key, typename Value> class Map { // 线程安全的 map
 public:
     std::shared_mutex mutex;
     std::unordered_map<Key, Value> map;

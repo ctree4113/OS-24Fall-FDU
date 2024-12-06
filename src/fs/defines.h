@@ -15,10 +15,10 @@ typedef struct {
 } SuperBlock; // 超级块
 
 #define ROOT_INODE_NO 1                                   // 根目录索引编号
-#define INODE_PER_BLOCK (BLOCK_SIZE / sizeof(InodeEntry)) // 每块最大索引数量
+#define INODE_PER_BLOCK (BLOCK_SIZE / sizeof(InodeEntry)) // 每块最大索引数
 
 
-#define BIT_PER_BLOCK (BLOCK_SIZE * 8)                                // 每块的最大位图数量
+#define BIT_PER_BLOCK (BLOCK_SIZE * 8)                               // 每块的最大位图数
 #define BIT_BLOCK_NO(b, sb) ((b) / BIT_PER_BLOCK + sb->bitmap_start) // 位图块号
 
 #define INODE_NUM_DIRECT 12                                      // 直接块数
@@ -34,7 +34,6 @@ enum {
     INODE_DEVICE = 3,    // 设备
 };
 
-// 硬盘-索引项
 typedef struct dinode {
     InodeType type;              // 索引类型
     u16 major;                   // 主设备号
@@ -43,22 +42,22 @@ typedef struct dinode {
     u32 num_bytes;               // 文件大小
     u32 addrs[INODE_NUM_DIRECT]; // 直接块块号
     u32 indirect;                // 间接块块号
-} InodeEntry; // 索引
+} InodeEntry; // 磁盘索引项，记录 inode 的元数据在磁盘上的位置
 
 typedef struct {
-    u32 addrs[INODE_NUM_INDIRECT];
-} IndirectBlock;
+    u32 addrs[INODE_NUM_INDIRECT]; // 间接块块号
+} IndirectBlock; // 间接块
 
 #define FILE_NAME_MAX_LENGTH 14 // 文件名最大长度
 
 typedef struct dirent {
     u16 inode_no;                    // 索引号
     char name[FILE_NAME_MAX_LENGTH]; // 文件名
-} DirEntry; // 目录
+} DirEntry; // 目录下的文件
 
-#define LOG_MAX_SIZE ((BLOCK_SIZE - sizeof(usize)) / sizeof(usize)) // 日志头块最大记录数量
+#define LOG_MAX_SIZE ((BLOCK_SIZE - sizeof(usize)) / sizeof(usize)) // 日志头块最大记录数
 
 typedef struct {
-    usize num_blocks;
-    usize block_no[LOG_MAX_SIZE];
+    usize num_blocks;             // 记录数
+    usize block_no[LOG_MAX_SIZE]; // 记录块号
 } LogHeader; // 日志头

@@ -11,10 +11,9 @@ extern "C" {
 #include <mutex>
 #include <random>
 #include <vector>
-
 #include "../exception.hpp"
 
-struct MockBlockDevice {
+struct MockBlockDevice { // 模拟块设备
     struct Block {
         std::mutex mutex;
         u8 data[BLOCK_SIZE];
@@ -179,9 +178,7 @@ static BlockDevice device;
 static void stub_read(usize block_no, u8* buffer) { mock.read(block_no, buffer); }
 static void stub_write(usize block_no, u8* buffer) { mock.write(block_no, buffer); }
 
-
-
-static void initialize_mock( //
+static void initialize_mock( // 初始化模拟块设备
     usize log_size, usize num_data_blocks, const std::string& image_path = "")
 {
     sblock.log_start = 2;
@@ -203,7 +200,7 @@ static void initialize_mock( //
 
 }
 
-[[maybe_unused]] static void initialize( //
+[[maybe_unused]] static void initialize( // 初始化块设备
     usize log_size, usize num_data_blocks, const std::string& image_path = "")
 {
     initialize_mock(log_size, num_data_blocks, image_path);
